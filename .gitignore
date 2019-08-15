@@ -1,3 +1,5 @@
 raws/
 data/
+meta/
+plots/
 *.RData

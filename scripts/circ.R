@@ -3,12 +3,14 @@ library(randomcoloR)
 library(ggplot2)
 
 df <- read.table("../meta/ligand_receptor_villi.tsv", sep="\t", header=T, stringsAsFactors = F)
+df <- df[sample(1:48, 15),]
 allnames <- c(df$from, df$to)
 shortnames <- sapply(strsplit(allnames, "_"), "[[", 2)
 
-pdf("../plots/circ_receptor_ligand.pdf", width=10, height=10) 
+pdf("../plots/circ_receptor_ligand.pdf", width=7, height=7) 
 
 chordDiagram(df[,1:3], transparency = 1, annotationTrack = c("grid"),
+             annotationTrackHeight = c(0.1, 0.01),
              preAllocateTracks = list(track.height = 0.1),
              directional = 1, direction.type = "arrows",
              link.arr.col = "black", link.arr.length = 0.2, link.arr.lwd = df$width,
@@ -46,3 +48,4 @@ for (i in 1:length(shortnames)) {
 }
 
 dev.off()
+
