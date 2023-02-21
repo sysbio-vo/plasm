@@ -1,6 +1,7 @@
 library(Seurat)
 library(DoubletDecon)
 library(dplyr)
+library(ggplot2)
 
 # Load metadata
 
@@ -69,7 +70,6 @@ FeaturePlot(object = plc.tsne, features.plot = c("LYZ"), cols.use = c("grey", "b
                               reduction.use = "tsne")
 FeaturePlot(object = plc.tsne, features.plot = c("THEMIS"), cols.use = c("grey", "blue"), 
             reduction.use = "tsne")
-
 FeaturePlot(object = plc.tsne, features.plot = c("SPTA1"), cols.use = c("grey", "blue"), 
             reduction.use = "tsne")
 FeaturePlot(object = plc.tsne, features.plot = c("DPYD"), cols.use = c("grey", "blue"), 
@@ -104,17 +104,26 @@ DimPlot(object = plc, reduction = "tsne", label = TRUE, pt.size = 0.5, group.by 
 + NoLegend()
 
 
+#Female
+FeaturePlot(object = plc, features = c("XIST"))
 
-FeaturePlot(object = plc, features = c("F13A1"))
-FeaturePlot(object = plc, features = c("LYZ"))
-FeaturePlot(object = plc, features = c("CD2"))
-FeaturePlot(object = plc, features = c("KLRF1"))
-FeaturePlot(object = plc, features = c("BACH2"))
+#Male
+FeaturePlot(object = plc, features = c("RPS4Y1"))
+FeaturePlot(object = plc, features = c("EIF1AY1"))
+FeaturePlot(object = plc, features = c("KDM5D"))
+FeaturePlot(object = plc, features = c("DDX3Y"))
 
-FeaturePlot(object = plc, features = c("KLRF1"), reduction = "tsne")
+FeaturePlot(object = plc, features = c("DAZ"))
+FeaturePlot(object = plc, features = c("BPY2"))
+FeaturePlot(object = plc, features = c("SRY"))
+FeaturePlot(object = plc, features = c("TSPY"))
+FeaturePlot(object = plc, features = c("ZFY"))
+FeaturePlot(object = plc, features = c("CDY"))
+FeaturePlot(object = plc, features = c("TGIF2LY"))
+FeaturePlot(object = plc, features = c("PRY"))
+FeaturePlot(object = plc, features = c("VCY"))
+FeaturePlot(object = plc, features = c("EIFAY"))
 
-FeaturePlot(object = plc, features = c("IGF2"))
-FeaturePlot(object = plc, features = c("PAPPA2"))
 
 
 head(plc@assays$RNA@counts)
@@ -160,3 +169,52 @@ data <- data[,which(colnames(data) %in% meta$Cell)]
 ncol(data)
 write.table(meta, "meta_villi.tsv", sep="\t", quote = F, row.names = F)
 write.table(data, "scaled_counts_villi.tsv", sep="\t", quote = F)
+
+
+# Maternal-fetal separation
+
+head(plc@assays$RNA@counts)
+data <- as.matrix(x = GetAssayData(plc, slot = "scale.data"))
+data <- data[VariableFeatures(plc),]
+data <- round(data, 2)
+nrow(data)
+ncol(data)
+rownames(data)
+colnames(data)
+data[1,]
+data[data<0] <- 0
+which(rownames(data)="XIST")
+
+genderPlots <- function(genders, counts, samples) {
+  # Making orthogonal gender-specific plot based on genes from https://www.ncbi.nlm.nih.gov/pubmed/23829492
+  maleGenes <- c('RPS4Y1', 'EIF1AY', 'DDX3Y', 'KDM5D')
+  femaleGenes <- c('XIST')
+  if (any(maleGenes %in% rownames(counts))){
+    maleCounts <- rowSums(t(counts[rownames(counts) %in% maleGenes,]))
+  } else {
+    maleCounts <- rep(0, length(genders))
+  }
+  if (any(femaleGenes %in% rownames(counts))){
+    femaleCounts <- counts[rownames(counts) %in% femaleGenes,]
+  } else {
+    femaleCounts <- rep(0, length(genders))
+  }
+  data <- data.frame(
+    m=maleCounts,
+    f=femaleCounts,
+    gender=genders,
+    name=samples)
+  p <- ggplot(data = data, aes(x=f, y=m, colour=gender)) +
+    geom_point() +
+    ggtitle("Reads in gender specific genes") +
+    theme(axis.ticks.x=element_blank(),
+          panel.grid.major.x = element_blank(),
+          plot.title = element_text(hjust = 0.5),
+          legend.position="none") +
+    ylab("Raw number of reads in male specific genes") +
+    xlab("Raw number of reads in female specific gene")
+  #suppressMessages(ggsave("GenderSpecificExpression.jpeg", p))
+  return(p)
+}
+
+genderPlots(rep("female", ncol(data)), data, colnames(data))
